@@ -6,10 +6,15 @@ LDFLAGS =
 LOADLIBES =
 LDLIBS =
 OBJFLAGS = -c
+SHELL := /bin/bash
+
+SERVER_PORT := 1088
 
 .DEFAULT: all
-.PHONY: all
-all: $(CC) $(CFLAGS)  httpd.c -o httpd
+.PHONY: all post clean
+
+#all: $(CC) $(CFLAGS)  httpd.c -o httpd
+all: httpd
 
 clean:
 	rm -f *.o
