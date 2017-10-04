@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	int fd_server, fd_client;
 	char buf[2048];
 	// holds the file descriptor
-	int fding;
+	//int fding;
 	int on = 1;
 
 	fd_server = socket(AF_INET, SOCK_STREAM, 0);
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 
 			printf("%s\n", buf);
 
-			if(!strncmp(buf, "GET /poopemoji.jpg", 16))
+			/*if(!strncmp(buf, "GET /poopemoji.jpg", 16))
 			{
 				fding = open("favicon.ico", O_RDONLY);
 				sendfile(fd_client, fding, NULL, 90000);
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 			}
 			else 
 				write(fd_client, webpage, sizeof(webpage) - 1);
-
+*/
 			close(fd_client);
 			printf("closing....\n");
 			exit(0);
