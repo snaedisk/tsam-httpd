@@ -18,7 +18,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-typedef enum HttpMethod {GET, HEAD, POST, UNKNOWN} HttpMethod;
+/*typedef enum HttpMethod {GET, HEAD, POST, UNKNOWN} HttpMethod;
 
 const char * const http_methods[] = {
 	"GET",
@@ -26,7 +26,7 @@ const char * const http_methods[] = {
 	"POST",
 	"UNKNOWN",
 };
-
+*/
 char webpage[] = 
 "HTTP/1.1 200 OK\r\n"
 "Content-Type: text/html; charset=UTF-8\r\n\r\n"
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	int fd_server, fd_client;
 	char buf[2048];
 	// holds the file descriptor
-	//int fding;
+	int fding;
 	int on = 1;
 
 	fd_server = socket(AF_INET, SOCK_STREAM, 0);
@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
 		close(fd_server);
 		exit(1);
 	}
+	puts("bind done");
 
 	if(listen(fd_server, 10) == -1) 
 	{
@@ -93,15 +94,16 @@ int main(int argc, char *argv[])
 
 			printf("%s\n", buf);
 
-			/*if(!strncmp(buf, "GET /poopemoji.jpg", 16))
+			if(!strncmp(buf, "GET /poopemoji.ico", 16))
 			{
-				fding = open("favicon.ico", O_RDONLY);
+				printf("Got image.....\n");
+				fding = open("poopemoji.ico", O_RDONLY);
 				sendfile(fd_client, fding, NULL, 90000);
 				close(fding);
 			}
 			else 
 				write(fd_client, webpage, sizeof(webpage) - 1);
-*/
+
 			close(fd_client);
 			printf("closing....\n");
 			exit(0);
@@ -109,12 +111,6 @@ int main(int argc, char *argv[])
 		// parent process
 		close(fd_client);
 	}
-
-
-
-
-
-
 
 	return 0;
 }
