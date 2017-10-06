@@ -19,7 +19,6 @@
 #include <fcntl.h>
 
 /*typedef enum HttpMethod {GET, HEAD, POST, UNKNOWN} HttpMethod;
-
 const char * const http_methods[] = {
 	"GET",
 	"HEAD",
@@ -27,23 +26,30 @@ const char * const http_methods[] = {
 	"UNKNOWN",
 };
 */
+
+int port_nr;
+char *ip_addr;
+
 char webpage[] = 
 "HTTP/1.1 200 OK\r\n"
 "Content-Type: text/html; charset=UTF-8\r\n\r\n"
 "<!DOCTYPE html>\r\n"
-"<html><head><title>ShellWaveX</title>\r\n"
-"<style>body {backgroung-color: #FFFF00 }</style></head>\r\n"
-"<body><center><h1>Hello World!</h1><br>\r\n"
-"</center></body></html>\r\n";
+"<html>\r\n"
+"<body><h1>"
+"</h1><br>\r\n"
+"</body></html>\r\n";
+
+#define BUFFER_SIZE 10000;
+
 int main(int argc, char *argv[])
 {
 	struct sockaddr_in server_addr, client_addr;
 	socklen_t sin_len = sizeof(client_addr);
 	int fd_server, fd_client;
-	char buf[2048];
-	// holds the file descriptor
-	int fding;
+	char buf[BUFFER_SIZE];
 	int on = 1;
+
+	port_nr = strtol(argv[1], NULL, 10);
 
 	fd_server = socket(AF_INET, SOCK_STREAM, 0);
 	if(fd_server < 0)
@@ -51,7 +57,7 @@ int main(int argc, char *argv[])
 		perror("socket");
 		exit(1);
 	}
-
+	memset(&server_addr, 0, sizeof(server_addr));
 	setsockopt(fd_server, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int));
 
 	server_addr.sin_family = AF_INET;
@@ -64,7 +70,6 @@ int main(int argc, char *argv[])
 		close(fd_server);
 		exit(1);
 	}
-	puts("bind done");
 
 	if(listen(fd_server, 10) == -1) 
 	{
@@ -75,7 +80,9 @@ int main(int argc, char *argv[])
 
 	while(1)
 	{
+		printf("Waiting.....\n");
 		fd_client = accept(fd_server, (struct sockaddr *) &client_addr, &sin_len);
+		//ip_addr = inet_ntoa(client_addr.sin_addr);
 
 		if(fd_client == -1) 
 		{
@@ -94,22 +101,13 @@ int main(int argc, char *argv[])
 
 			printf("%s\n", buf);
 
-			if(!strncmp(buf, "GET /poopemoji.ico", 16))
-			{
-				printf("Got image.....\n");
-				fding = open("poopemoji.ico", O_RDONLY);
-				sendfile(fd_client, fding, NULL, 90000);
-				close(fding);
-			}
-			else 
-				write(fd_client, webpage, sizeof(webpage) - 1);
-
 			close(fd_client);
-			printf("closing....\n");
-			exit(0);
+			
 		}
 		// parent process
 		close(fd_client);
+		printf("closing....\n");
+		exit(0);
 	}
 
 	return 0;
