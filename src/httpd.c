@@ -37,6 +37,78 @@ char webpage[] =
 "</h1><br>\r\n"
 "</body></html>\r\n";
 
+void bad_request(int fd_client) 
+{
+	char buff[1024];
+
+	sprintf(buff, "HTTP/1.1 400 Bad Request\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "Content-Type: text/html\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "<p>Got bad request, ")
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "e.g., malformed request syntax, invalid request
+   message framing, or deceptive request routing.\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+}
+
+void not_found_request(int fd_client)
+{
+	char buff[1024];
+
+	sprintf(buff, "HTTP/1.1 404 NOT FOUND\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "Server: httpd\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "Content-Type: text/html\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "<html><head><title>Not Found</title></head>\r\n")
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "<body><p>The server could not fulfill your request.\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "</body></html>\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+}
+
+void unimplemented_request(int fd_client)
+{
+	char buff[1024];
+
+	sprintf(buff, "HTTP/1.1 501 Method not implemented\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "Server: httpd\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "Content-Type: text/html\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "<html><head><title>Method Not Implemented</title></head>\r\n")
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "<body><p>Http request method not supported.\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	sprintf(buff, "</body></html>\r\n");
+	send(fd_client, buff, sizeof(buff), 0);	
+}
+
+void ok_request(int fd_client, const char *filename) 
+{
+	char buff[1024];
+	//(void)filename;
+
+	strcpy(buff, "HTTP/1.1 200 OK\r\n");
+	send(fd_client, buff, strlen(buff), 0);
+	strcpy(buff, "Server: httpd\r\n");
+	send(fd_client, buff, strlen(buff), 0);
+	sprintf(buff, "Content-Type: text/html\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+	strcpy(buff, "\r\n");
+	send(fd_client, buff, sizeof(buff), 0);
+}
+
 #define BUFFER_SIZE 10000
 
 int main(int argc, char *argv[])
