@@ -29,7 +29,7 @@ int port_nr;
 char *ip_addr;
 
 char webpage[] = 
-"HTTP/1.1 200 OK\r\n"
+"HTTP/1.0 200 OK\r\n"
 "Content-Type: text/html; charset=UTF-8\r\n\r\n"
 "<!DOCTYPE html>\r\n"
 "<html><head><title>HTTP Server</title>\r\n"
@@ -54,7 +54,7 @@ void bad_request(int fd_client)
 {
 	char buff[1024];
 
-	sprintf(buff, "HTTP/1.1 400 Bad Request\r\n");
+	sprintf(buff, "HTTP/1.0 400 Bad Request\r\n");
 	send(fd_client, buff, sizeof(buff), 0);
 	sprintf(buff, "Content-Type: text/html\r\n");
 	send(fd_client, buff, sizeof(buff), 0);
@@ -70,7 +70,7 @@ void not_found_request(int fd_client)
 {
 	char buff[1024];
 
-	sprintf(buff, "HTTP/1.1 404 NOT FOUND\r\n");
+	sprintf(buff, "HTTP/1.0 404 NOT FOUND\r\n");
 	send(fd_client, buff, sizeof(buff), 0);
 	sprintf(buff, "Server: httpd\r\n");
 	send(fd_client, buff, sizeof(buff), 0);
@@ -90,7 +90,7 @@ void unimplemented_request(int fd_client)
 {
 	char buff[1024];
 
-	sprintf(buff, "HTTP/1.1 501 Method not implemented\r\n");
+	sprintf(buff, "HTTP/1.0 501 Method not implemented\r\n");
 	send(fd_client, buff, sizeof(buff), 0);
 	sprintf(buff, "Server: httpd\r\n");
 	send(fd_client, buff, sizeof(buff), 0);
@@ -111,7 +111,7 @@ void ok_request(int fd_client, const char *filename)
 	char buff[1024];
 	//(void)filename;
 
-	strcpy(buff, "HTTP/1.1 200 OK\r\n");
+	strcpy(buff, "HTTP/1.0 200 OK\r\n");
 	send(fd_client, buff, strlen(buff), 0);
 	strcpy(buff, "Server: httpd\r\n");
 	send(fd_client, buff, strlen(buff), 0);
