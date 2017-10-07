@@ -10,22 +10,20 @@
 #include <glib.h>
 #include <stdbool.h>
 #include <time.h>
-
-// from video...
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-/*typedef enum HttpMethod {GET, HEAD, POST, UNKNOWN} HttpMethod;
+typedef enum HttpMethod {GET, HEAD, POST, UNKNOWN} HttpMethod;
 const char * const http_methods[] = {
 	"GET",
 	"HEAD",
 	"POST",
 	"UNKNOWN",
 };
-*/
+
 
 int port_nr;
 char *ip_addr;
@@ -39,7 +37,7 @@ char webpage[] =
 "</h1><br>\r\n"
 "</body></html>\r\n";
 
-#define BUFFER_SIZE 10000;
+#define BUFFER_SIZE 10000
 
 int main(int argc, char *argv[])
 {
@@ -82,7 +80,7 @@ int main(int argc, char *argv[])
 	{
 		printf("Waiting.....\n");
 		fd_client = accept(fd_server, (struct sockaddr *) &client_addr, &sin_len);
-		//ip_addr = inet_ntoa(client_addr.sin_addr);
+		ip_addr = inet_ntoa(client_addr.sin_addr);
 
 		if(fd_client == -1) 
 		{
@@ -91,23 +89,15 @@ int main(int argc, char *argv[])
 		}
 
 		printf("Got client connection......\n");
-
-		if(!fork()) //child process returns 0 
+		read(fd_client, buf, 9999);
+		for(int i = 0; i < 1; i++) 
 		{
-			// child process
-			close(fd_client); 
-			memset(buf, 0, 2048);
-			read(fd_client, buf, 2047);
-
 			printf("%s\n", buf);
-
-			close(fd_client);
-			
 		}
-		// parent process
-		close(fd_client);
-		printf("closing....\n");
-		exit(0);
+
+		//handle_http_request(fd_client);
+		//write_logfile();
+
 	}
 
 	return 0;
