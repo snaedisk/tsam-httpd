@@ -38,16 +38,24 @@ char webpage_end[] =
 void write_logfile()
 {
 	FILE *file;
-	file = fopen("logfile.log", "a+");
-	time_t timer;
+	time_t timer = time(NULL);
 	char responseCode[30];
-	char time_buffer[50];
-	struct tm* time_info;
-	time(&timer);
+	//char time_buffer[50];
+	//struct tm* time_info;
+	
+	file = fopen("logfile.log", "a+");
+	if(file == NULL)
+	{
+		printf("Error\n");
+	}
+	
+	/*time(&timer);
 	time_info = localtime(&timer);
 	strftime(time_buffer, 50, "%Y - %M-%d %H:%M:%S", time_info);
-	puts(time_buffer);
-	fprintf(file, "%s : " , time_buffer);
+	puts(time_buffer);*/
+
+	//fprintf(file, "%s : " , time_buffer);
+	fprintf(file, "%s", ctime(&timer));
 	fprintf(file, "%s : ", ip_addr);
 	fprintf(file, "%d : ", port_nr);
 
@@ -191,11 +199,6 @@ int main(int argc, char *argv[])
 			/**************************/
 			send(fd_client, buffer, strlen(buffer), 0);
 		}
-
-		//write(fd_client, webpage, sizeof(webpage) - 1);
-		//accept_request(fd_client);
-		//handle_http_request(fd_client);
-		//write_logfile();
 	}
 	close(fd_server);
 	return 0;
