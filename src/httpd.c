@@ -31,33 +31,31 @@ int port_nr;
 char *ip_addr;
 
 char webpage[] = 
-"HTTP/1.0 200 OK\r\n"
-"Content-Type: text/html; charset=UTF-8\r\n\r\n"
-"<!DOCTYPE html>\r\n"
-"<html><head><title>HTTP Server</title>\r\n"
-"<style>body {backgroung-color: #FFFF00 }</style></head>\r\n"
-"<body><center><h1>Hello World!</h1><br>\r\n"
-"</center></body></html>\r\n";
-
+	"HTTP/1.0 200 OK\r\n"
+	"Content-Type: text/html; charset=UTF-8\r\n\r\n"
+	"<!DOCTYPE html>\r\n"
+	"<html><head><title>HTTP Server</title>\r\n"
+	"<style>body {backgroung-color: #FFFF00 }</style></head>\r\n"
+	"<body><center><h1>Hello World!</h1><br>\r\n"
+	"</center></body></html>\r\n";
+	
+//logs information to a logfile
 void write_logfile()
 {
 	FILE *file;
 	file = fopen("logfile.log", "a+");
-	time_t timer;
+	time_t ti;
+	time(&ti);
+	struct tm* t_info;
 	char time_buffer[50];
-	struct tm* time_info;
-	time(&timer);
-	time_info = localtime(&timer);
-	strftime(time_buffer,50,"%Y - %M-%d %H:%M:%S", time_info);
-	puts(time_buffer);
-	fprintf(file, "%s : " , time_buffer);
+	t_info = localtime(&ti);
+	strftime(time_buffer,50,"%Y - %M-%d %H:%M:%S", t_info);
 	fprintf(file, "%s : ", ip_addr);
+	fprintf(file, "%s : " , time_buffer);
 	fprintf(file, "%d : ", port_nr);
 	fclose(file);
 
-	{
-		/* data */
-	};
+	
 
 }
 
