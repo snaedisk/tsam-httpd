@@ -18,22 +18,26 @@
 
 #define ISspace(x) isspace((int)(x))
 
+typedef enum HttpMethod {GET, HEAD, POST, UNKNOWN} HttpMethod;
+const char * const http_methods[] = {
+	"GET",
+	"HEAD",
+	"POST",
+	"UNKNOWN",
+};
+
+
 int port_nr;
 char *ip_addr;
-char *str;
-char *url;
 
-char webpage_start[] = 
+char webpage[] = 
 "HTTP/1.0 200 OK\r\n"
 "Content-Type: text/html; charset=UTF-8\r\n\r\n"
 "<!DOCTYPE html>\r\n"
 "<html><head><title>HTTP Server</title>\r\n"
 "<style>body {backgroung-color: #FFFF00 }</style></head>\r\n"
-"<body><center><h1>Hello World!\r\n";
-
-char webpage_end[] = 
-"</h1><br>\r\n"
-"</body></html>\r\n";
+"<body><center><h1>Hello World!</h1><br>\r\n"
+"</center></body></html>\r\n";
 
 void cat(int fd_client, FILE *resource) 
 {
@@ -120,42 +124,6 @@ void ok_request(int fd_client, const char *filename)
 	send(fd_client, buff, sizeof(buff), 0);
 }
 
-int get_line(int socket, char *buff, int size) 
-{
-	int i = 0; 
-	char c = '\0';
-	int n;
-
-	while((i < size-1) && (c != '\n'))
-	{
-		n = recv(socket, &c, 1, 0);
-		if (n > 0)
-		{
-			if (c == '\r') 
-			{
-				n = recv(socket, &c, 1, MSG_PEEK);
-
-				if((n > 0) && (c == '\n')) 
-				{
-					recv(socket, &c, 1, 0);
-				}
-				else 
-				{
-					c = '\n';
-				}
-			}
-			buff[i] = c;
-			i++;
-		}
-		else 
-		{
-			c = '\n';
-		}
-	}
-	buff[i] = '\0';
-	return(i);
-}
-
 void serve_file(int fd_client, const char *filename)
 {
 	FILE *resource = NULL;
@@ -187,44 +155,23 @@ void serve_file(int fd_client, const char *filename)
 void write_logfile()
 {
 	FILE *file;
-	time_t timer = time(NULL);
-	char responseCode[30];
-	//char time_buffer[50];
-	//struct tm* time_info;
-	
 	file = fopen("logfile.log", "a+");
-	if(file == NULL)
-	{
-		printf("Error\n");
-	}
-	
-	/*time(&timer);
+	time_t timer;
+	char time_buffer[50];
+	struct tm* time_info;
+	time(&timer);
 	time_info = localtime(&timer);
-	strftime(time_buffer, 50, "%Y - %M-%d %H:%M:%S", time_info);
-	puts(time_buffer);*/
-
-	//fprintf(file, "%s : " , time_buffer);
-	fprintf(file, "%s", ctime(&timer));
+	strftime(time_buffer,50,"%Y - %M-%D %H:%M:%S", time_info);
+	puts(time_buffer);
+	fprintf(file, "%s : " , time_buffer);
 	fprintf(file, "%s : ", ip_addr);
 	fprintf(file, "%d : ", port_nr);
-
-	fprintf(file, " : %s", str);
-	fprintf(file, " : %s", url);
-
-	if(strcmp(str, "GET") == 0 || strcmp(str, "POST") == 0 || strcmp(str, "HEAD") == 0)
-	{
-		strcat(responseCode, "200 OK");
-	}
-	else
-	{
-		strcat(responseCode, "400 error");
-	}
-	fprintf(file, " : %s", responseCode);
 	fclose(file);
 
 	{
 		/* data */
 	};
+
 }
 
 void accept_request(int fd_client)
@@ -297,6 +244,42 @@ void accept_request(int fd_client)
 	close(fd_client);
 }
 
+int get_line(int socket, char *buff, int size) 
+{
+	int i = 0; 
+	char c = '\0';
+	int n;
+
+	while((i < size-1) && (c != '\n'))
+	{
+		n = recv(socket, &c, 1, 0);
+		if (n > 0)
+		{
+			if (c == '\r') 
+			{
+				n = recv(socket, &c, 1, MSG_PEEK);
+
+				if((n > 0) && (c == '\n')) 
+				{
+					recv(socket, &c, 1, 0);
+				}
+				else 
+				{
+					c = '\n';
+				}
+			}
+			buff[i] = c;
+			i++;
+		}
+		else 
+		{
+			c = '\n';
+		}
+	}
+	buff[i] = '\0';
+	return(i);
+}
+
 #define BUFFER_SIZE 10000
 
 int main(int argc, char *argv[])
@@ -338,8 +321,6 @@ int main(int argc, char *argv[])
 
 	while(1)
 	{
-		FILE *file;
-
 		printf("Waiting.....\n");
 		fd_client = accept(fd_server, (struct sockaddr *) &client_addr, &sin_len);
 		ip_addr = inet_ntoa(client_addr.sin_addr);
@@ -350,9 +331,6 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		file = fdopen(fd_client, "r");
-		//read the first line and check what request we are suppose to handle
-		
 		printf("Got client connection......\n");
 		read(fd_client, buf, 9999);
 		for(int i = 0; i < 1; i++) 
@@ -360,31 +338,13 @@ int main(int argc, char *argv[])
 			printf("%s\n", buf);
 		}
 
-		str = fgets(buf, sizeof(buf), file);
-		fprintf(stderr, "Request line from client: %s\n", str);
-		//Get the request
-		str = strtok(str, "\r\n");
-		fprintf(stderr, "Request: \n");
 
-		//Get the url from client
-		url = strtok(NULL, "\r\n");
-		if(url == NULL)
-		{
-			fprintf(stderr, "URL is NULL.....\n");
-		}
-		if(url[0] == '/')
-		{
-			url = &url[1];
-		}
-		fprintf(stderr, "URL: %s\n", url);
-		//Finished getting info from client
+		write(fd_client, webpage, sizeof(webpage) - 1);
 
-		
-		//write(fd_client, webpage, sizeof(webpage) - 1);
-		//accept_request(fd_client);
 		//handle_http_request(fd_client);
 		write_logfile();
+
 	}
-	close(fd_server);
+
 	return 0;
 }
