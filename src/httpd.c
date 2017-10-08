@@ -16,6 +16,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#define ISspace(x) isspace((int)(x))
+
 typedef enum HttpMethod {GET, HEAD, POST, UNKNOWN} HttpMethod;
 const char * const http_methods[] = {
 	"GET",
@@ -49,76 +51,7 @@ void cat(int fd_client, FILE *resource)
 		fgets(buff, sizeof(buff), resource);
 	}
 }
-void accept_request(int client)
-{
-	char buf[1024];
-	int numchars;
-	char method[255];
-	char url[255];
-	char path[512];
-	size_t a, b;
-	struct stat st;
-	
-	char *query_string = NULL;
 
-	numchars = get_line(client, buf, sizeof(buf));
-	a = 0; b = 0;
-	while (!ISspace(buf[b]) && (a < sizeof(method)-1))
-	{
-		method[a] = buf[b];
-		a++; b++;
-	}
-	method[a] = '\0';
-
-	if(strcasecmp(method, "GET") && strcasecmp(method, "POST"))
-	{
-		unimplemented_request(fd_client);
-		return;
-	}
-	//if(strcasecmp(method, "POST") == 0)
-	i = 0;
-	while(ISspace(buf[b] && b < sizeof(buf)))
-		b++;
-	while(!ISspace(buf[b]) && (a < sizeof(url) - 1) && (b < sizeof(buf)))
-	{
-		url[a] ) buf[b];
-		a++; b++;
-	}
-	url[a] = '\0';
-
-	if(strcasecmp(method, "GET") == 0)
-	{
-		query_string = url;
-		while ((*query_string != '?') && (*query_string != '\0'))
-			query_string++;
-		if(query_string == '?')
-		{
-			*query_string = '\0';
-			query_string++;
-		}
-	}
-	sprintf(path, "htdocs%s", url);
-	if(parth[strlen(path) - 1] == '/')
-		strcat(path, "index.html"); 
-	if(stat(path, &st) == -1)
-	{
-		while ((numchars > 0 ) && strcasecmp("\n", buf))
-			numchars = get_line(fd_client, buf, sizeof(buf));
-			not_found_request(fd_client);
-	}
-	else
-	{
-		if((st.st_mode & S_IFMT) == S_IFDIR)
-			strcat(path, "/index.html");
-		//if((st.st_mode & S_IXUSR) || (st.st_mode & S_IXGRP) || (st.st_mode & S_IXOTH) ))
-		// cgi = 1;
-
-
-	}
-
-	close(fd_client);
-
-}
 
 void bad_request(int fd_client) 
 {
@@ -239,6 +172,76 @@ void write_logfile()
 		/* data */
 	};
 
+}
+
+void accept_request(int fd_client)
+{
+	char buf[1024];
+	int numchars;
+	char method[255];
+	char url[255];
+	char path[512];
+	size_t a, b;
+	struct stat st;
+	
+	char *query_string = NULL;
+
+	//numchars = get_line(fd_client, buf, sizeof(buf));
+	a = 0; b = 0;
+	while (!ISspace(buf[b]) && (a < sizeof(method)-1))
+	{
+		method[a] = buf[b];
+		a++; b++;
+	}
+	method[a] = '\0';
+
+	if(strcasecmp(method, "GET") && strcasecmp(method, "POST"))
+	{
+		unimplemented_request(fd_client);
+		return;
+	}
+	//if(strcasecmp(method, "POST") == 0)
+	a = 0;
+	while(ISspace(buf[b] && b < sizeof(buf)))
+		b++;
+	while(!ISspace(buf[b]) && (a < sizeof(url) - 1) && (b < sizeof(buf)))
+	{
+		url[a] = buf[b];
+		a++; 
+		b++;
+	}
+	url[a] = '\0';
+
+	if(strcasecmp(method, "GET") == 0)
+	{
+		query_string = url;
+		while ((*query_string != '?') && (*query_string != '\0'))
+			query_string++;
+		if(query_string == '?')
+		{
+			*query_string = '\0';
+			query_string++;
+		}
+	}
+	sprintf(path, "htdocs%s", url);
+	if(path[strlen(path) - 1] == '/')
+	{
+		strcat(path, "index.html"); 
+	}
+	if(stat(path, &st) == -1)
+	{
+		while ((numchars > 0 ) && strcasecmp("\n", buf))
+			//numchars = get_line(fd_client, buf, sizeof(buf));
+			not_found_request(fd_client);
+	}
+	else
+	{
+		if((st.st_mode & S_IFMT) == S_IFDIR)
+			strcat(path, "/index.html");
+		//if((st.st_mode & S_IXUSR) || (st.st_mode & S_IXGRP) || (st.st_mode & S_IXOTH) ))
+		// cgi = 1;
+	}
+	close(fd_client);
 }
 
 #define BUFFER_SIZE 10000
