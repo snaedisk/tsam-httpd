@@ -16,147 +16,29 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define ISspace(x) isspace((int)(x))
-
-typedef enum HttpMethod {GET, HEAD, POST, UNKNOWN} HttpMethod;
-const char * const http_methods[] = {
-	"GET",
-	"HEAD",
-	"POST",
-	"UNKNOWN",
-};
-
-
 int port_nr;
 char *ip_addr;
+char *str;
+char *url;
 
-char webpage[] = 
+char webpage_start[] = 
 "HTTP/1.0 200 OK\r\n"
 "Content-Type: text/html; charset=UTF-8\r\n\r\n"
 "<!DOCTYPE html>\r\n"
 "<html><head><title>HTTP Server</title>\r\n"
 "<style>body {backgroung-color: #FFFF00 }</style></head>\r\n"
-"<body><center><h1>Hello World!</h1><br>\r\n"
-"</center></body></html>\r\n";
+"<body><center><h1>Hello World!\r\n";
 
-void cat(int fd_client, FILE *resource) 
-{
-	char buff[1024];
-
-	fgets(buff, sizeof(buff), resource);
-
-	while(!feof(resource))
-	{
-		send(fd_client, buff, strlen(buff), 0);
-		fgets(buff, sizeof(buff), resource);
-	}
-}
-
-
-void bad_request(int fd_client) 
-{
-	char buff[1024];
-
-	sprintf(buff, "HTTP/1.0 400 Bad Request\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "Content-Type: text/html\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "<p>Got bad request, ");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "e.g., malformed request syntax, invalid request message framing, or deceptive request routing.\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-}
-
-void not_found_request(int fd_client)
-{
-	char buff[1024];
-
-	sprintf(buff, "HTTP/1.0 404 NOT FOUND\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "Server: httpd\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "Content-Type: text/html\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "<html><head><title>Not Found</title></head>\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "<body><p>The server could not fulfill your request.\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "</body></html>\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-}
-
-void unimplemented_request(int fd_client)
-{
-	char buff[1024];
-
-	sprintf(buff, "HTTP/1.0 501 Method not implemented\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "Server: httpd\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "Content-Type: text/html\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "<html><head><title>Method Not Implemented</title></head>\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "<body><p>Http request method not supported.\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "</body></html>\r\n");
-	send(fd_client, buff, sizeof(buff), 0);	
-}
-
-void ok_request(int fd_client, const char *filename) 
-{
-	char buff[1024];
-	//(void)filename;
-
-	strcpy(buff, "HTTP/1.0 200 OK\r\n");
-	send(fd_client, buff, strlen(buff), 0);
-	strcpy(buff, "Server: httpd\r\n");
-	send(fd_client, buff, strlen(buff), 0);
-	sprintf(buff, "Content-Type: text/html\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	strcpy(buff, "\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-}
-
-void serve_file(int fd_client, const char *filename)
-{
-	FILE *resource = NULL;
-	int numchars = 1; 
-	char buff[1024];
-
-	buff[0] = 'A';
-	buff[1] = '\0';
-
-	while((numchars > 0) && strcmp("\n", buff))
-	{
-		numchars = get_line(fd_client, buff, sizeof(buff));
-	}
-
-	resource = fopen(filename, "r");
-
-	if(resource != NULL) 
-	{
-		ok_request(fd_client, filename);
-		cat(fd_client, resource);
-	}
-	else 
-	{
-		not_found_request(fd_client);
-	}	
-	fclose(resource);
-}
+char webpage_end[] = 
+"</h1><br>\r\n"
+"</body></html>\r\n";
 
 void write_logfile()
 {
 	FILE *file;
 	file = fopen("logfile.log", "a+");
 	time_t timer;
+	char responseCode[30];
 	char time_buffer[50];
 	struct tm* time_info;
 	time(&timer);
@@ -166,118 +48,25 @@ void write_logfile()
 	fprintf(file, "%s : " , time_buffer);
 	fprintf(file, "%s : ", ip_addr);
 	fprintf(file, "%d : ", port_nr);
+
+	fprintf(file, " : %s", str);
+	fprintf(file, " : %s", url);
+
+	if(strcmp(str, "GET") == 0 || strcmp(str, "POST") == 0 || strcmp(str, "HEAD") == 0)
+	{
+		strcat(responseCode, "200 OK");
+	}
+	else
+	{
+		strcat(responseCode, "400 error");
+	}
+	fprintf(file, " : %s", responseCode);
 	fclose(file);
 
 	{
 		/* data */
 	};
 
-}
-
-void accept_request(int fd_client)
-{
-	char buf[1024];
-	int numchars;
-	char method[255];
-	char url[255];
-	char path[512];
-	size_t a, b;
-	struct stat st;
-	
-	char *query_string = NULL;
-
-	numchars = get_line(fd_client, buf, sizeof(buf));
-	a = 0; b = 0;
-	while (!ISspace(buf[b]) && (a < sizeof(method)-1))
-	{
-		method[a] = buf[b];
-		a++; b++;
-	}
-	method[a] = '\0';
-
-	if(strcasecmp(method, "GET") && strcasecmp(method, "POST"))
-	{
-		unimplemented_request(fd_client);
-		return;
-	}
-	//if(strcasecmp(method, "POST") == 0)
-	a = 0;
-	while(ISspace(buf[b] && b < sizeof(buf)))
-		b++;
-	while(!ISspace(buf[b]) && (a < sizeof(url) - 1) && (b < sizeof(buf)))
-	{
-		url[a] = buf[b];
-		a++; 
-		b++;
-	}
-	url[a] = '\0';
-
-	if(strcasecmp(method, "GET") == 0)
-	{
-		query_string = url;
-		while ((*query_string != '?') && (*query_string != '\0'))
-			query_string++;
-		if(query_string == '?')
-		{
-			*query_string = '\0';
-			query_string++;
-		}
-	}
-	sprintf(path, "htdocs%s", url);
-	if(path[strlen(path) - 1] == '/')
-	{
-		strcat(path, "index.html"); 
-	}
-	if(stat(path, &st) == -1)
-	{
-		while ((numchars > 0 ) && strcasecmp("\n", buf))
-			numchars = get_line(fd_client, buf, sizeof(buf));
-			not_found_request(fd_client);
-	}
-	else
-	{
-		if((st.st_mode & S_IFMT) == S_IFDIR)
-			strcat(path, "/index.html");
-		//if((st.st_mode & S_IXUSR) || (st.st_mode & S_IXGRP) || (st.st_mode & S_IXOTH) ))
-		// cgi = 1;
-	}
-	close(fd_client);
-}
-
-int get_line(int socket, char *buff, int size) 
-{
-	int i = 0; 
-	char c = '\0';
-	int n;
-
-	while((i < size-1) && (c != '\n'))
-	{
-		n = recv(socket, &c, 1, 0);
-		if (n > 0)
-		{
-			if (c == '\r') 
-			{
-				n = recv(socket, &c, 1, MSG_PEEK);
-
-				if((n > 0) && (c == '\n')) 
-				{
-					recv(socket, &c, 1, 0);
-				}
-				else 
-				{
-					c = '\n';
-				}
-			}
-			buff[i] = c;
-			i++;
-		}
-		else 
-		{
-			c = '\n';
-		}
-	}
-	buff[i] = '\0';
-	return(i);
 }
 
 #define BUFFER_SIZE 10000
@@ -289,6 +78,15 @@ int main(int argc, char *argv[])
 	int fd_server, fd_client;
 	char buf[BUFFER_SIZE];
 	int on = 1;
+
+	/*for(int i = 0; i < argc; i++) 
+	{
+		printf("%s\n", argv[i]);
+	}*/
+	if(argc == 1) 
+	{
+		printf("Disabled warning !!");
+	}
 
 	port_nr = strtol(argv[1], NULL, 10);
 
@@ -321,6 +119,8 @@ int main(int argc, char *argv[])
 
 	while(1)
 	{
+		FILE *file;
+
 		printf("Waiting.....\n");
 		fd_client = accept(fd_server, (struct sockaddr *) &client_addr, &sin_len);
 		ip_addr = inet_ntoa(client_addr.sin_addr);
@@ -331,20 +131,72 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
+		file = fdopen(fd_client, "r");
+		//read the first line and check what request we are suppose to handle
+
 		printf("Got client connection......\n");
 		read(fd_client, buf, 9999);
-		for(int i = 0; i < 1; i++) 
+
+		str = fgets(buf, sizeof(buf), file);
+		fprintf(stderr, "Request line from client: %s\n", str);
+		//Get the request
+		str = strtok(str, "\r\n");
+		fprintf(stderr, "Request: %s\n");
+
+		//Get the url from client
+		url = strtok(NULL, "\r\n");
+		if(url == NULL)
 		{
-			printf("%s\n", buf);
+			fprintf(stderr, "URL is NULL.....\n");
 		}
-
-
-		write(fd_client, webpage, sizeof(webpage) - 1);
-
-		//handle_http_request(fd_client);
+		if(url[0] == '/')
+		{
+			url = &url[1];
+		}
+		fprintf(stderr, "URL: %s\n", url);
+		//Finished getting info from client
+		
 		write_logfile();
 
-	}
+		//handle different types of requests
+		char buffer[2048];
 
+		if(strcmp(str, "GET") == 0) 
+		{
+			strcpy(buffer, webpage_start);
+			printf("Inside GET...");
+			strcat(buffer, ip_addr);
+
+			/****************/
+
+			strcat(buffer, webpage_end);
+			printf("Sending: %s\n", buffer);
+
+			send(fd_client, buffer, strlen(buffer), 0);
+		}
+		else if(strcmp(str, "POST") == 0)
+		{
+			printf("Trying post.....\n");
+
+			char** split_buffer = g_strsplit(buf, "\r\n\r\n", 2);
+			strcpy(buffer, webpage_start);
+			strcat(buffer, split_buffer[1]);
+			strcat(buffer, webpage_end);
+
+			printf("POST request: sending.....\n");
+			send(fd_client, buffer, strlen(buffer), 0);
+		}
+		else if(strcmp(str, "HEAD") == 0) 
+		{
+			/**************************/
+			send(fd_client, buffer, strlen(buffer), 0);
+		}
+
+		//write(fd_client, webpage, sizeof(webpage) - 1);
+		//accept_request(fd_client);
+		//handle_http_request(fd_client);
+		//write_logfile();
+	}
+	close(fd_server);
 	return 0;
 }
