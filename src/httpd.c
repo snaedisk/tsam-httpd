@@ -16,6 +16,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#define BUFFER_SIZE 10000
+
 int port_nr;
 char *ip_addr;
 char *str;
@@ -43,7 +45,7 @@ void write_logfile()
 	struct tm* time_info;
 	time(&timer);
 	time_info = localtime(&timer);
-	strftime(time_buffer,50,"%Y - %M-%D %H:%M:%S", time_info);
+	strftime(time_buffer, 50, "%Y - %M-%d %H:%M:%S", time_info);
 	puts(time_buffer);
 	fprintf(file, "%s : " , time_buffer);
 	fprintf(file, "%s : ", ip_addr);
@@ -68,8 +70,6 @@ void write_logfile()
 	};
 
 }
-
-#define BUFFER_SIZE 10000
 
 int main(int argc, char *argv[])
 {
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Request line from client: %s\n", str);
 		//Get the request
 		str = strtok(str, "\r\n");
-		fprintf(stderr, "Request: %s\n");
+		fprintf(stderr, "Request: \n");
 
 		//Get the url from client
 		url = strtok(NULL, "\r\n");
