@@ -10,7 +10,7 @@ Authors: Aníta, Fanney og Þ. Snædís
 
 Readme file for the implementation on assingnment to create a HTTP server. 
 
-1. The HTTP server serves content using the Hypertext Transfer protocol and the client we use is a web browser. The implementation of this project was made using elements from the **glib library.** The project is runned through ru.skel.is  ......
+This is a implementation of a HTTP server written in C language as an assignment from Reykjavik University. This project is made to understand the http service process. The HTTP server serves content using the Hypertext Transfer protocol and for the client we use a web browser. The implementation of this project was made using elements from the **glib library.** The project is runned through ru.skel.is.
 
 
 ##   Implementation   ##
