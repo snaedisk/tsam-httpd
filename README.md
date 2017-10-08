@@ -12,9 +12,9 @@ Readme file for the implementation on assingnment to create a HTTP server.
 
 This is a implementation of a HTTP server written in C language as an assignment from Reykjavik University. This project is made to understand the http service process. The HTTP server serves content using the Hypertext Transfer protocol and for the client we use a web browser. The implementation of this project was made using elements from the **glib library.** The project is runned through ru.skel.is.
 
+=======================================================
 
 ##   Implementation   ##
-
 
 Reserved addresses for this project:
 
@@ -27,38 +27,17 @@ Reserved addresses for this project:
 
 **httpd.c:** 
   
-  Protocol to transfer a request to read or write a file, .......
-  
-=======================================================
+  Protocol to transfer a request to read or write a file.
 
-**void cat()**
 	
-	--> sends the file content out on the socket. cat is a standard Unix utility that reads files sequentially, writing them to standard output.
+**char webpage[]**
+
+	--> array that holds all the HTML elements for the browser.
 	
-**void bad_request()**
-
-	--> informed the client about a bad request from the socket.
-  
-**void not_found_request()**
-
-	--> sends a 404 not found error message.
-  
-**void unimplemented_request()**
-
-	--> if the request is unimplemented the client will be informed about that
-  
-**void ok_request()**
-
-	--> Informes the client that the request is valid and gives you information about that.
-	
-**void serve_file()**
-
-	--> sends the file to the client and reports if there are errors.
-  
 **void write_logfile()**
 
 	--> sends information to our logfile.log.
   
 **int main()**
  
- 	--> the main ....
+ 	--> makes the client/socket connection and retrives the PORT number and a value to the IP number.
