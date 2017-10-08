@@ -39,119 +39,6 @@ char webpage[] =
 "<body><center><h1>Hello World!</h1><br>\r\n"
 "</center></body></html>\r\n";
 
-void cat(int fd_client, FILE *resource) 
-{
-	char buff[1024];
-
-	fgets(buff, sizeof(buff), resource);
-
-	while(!feof(resource))
-	{
-		send(fd_client, buff, strlen(buff), 0);
-		fgets(buff, sizeof(buff), resource);
-	}
-}
-
-
-void bad_request(int fd_client) 
-{
-	char buff[1024];
-
-	sprintf(buff, "HTTP/1.0 400 Bad Request\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "Content-Type: text/html\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "<p>Got bad request, ");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "e.g., malformed request syntax, invalid request message framing, or deceptive request routing.\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-}
-
-void not_found_request(int fd_client)
-{
-	char buff[1024];
-
-	sprintf(buff, "HTTP/1.0 404 NOT FOUND\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "Server: httpd\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "Content-Type: text/html\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "<html><head><title>Not Found</title></head>\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "<body><p>The server could not fulfill your request.\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "</body></html>\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-}
-
-void unimplemented_request(int fd_client)
-{
-	char buff[1024];
-
-	sprintf(buff, "HTTP/1.0 501 Method not implemented\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "Server: httpd\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "Content-Type: text/html\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "<html><head><title>Method Not Implemented</title></head>\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "<body><p>Http request method not supported.\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	sprintf(buff, "</body></html>\r\n");
-	send(fd_client, buff, sizeof(buff), 0);	
-}
-
-void ok_request(int fd_client, const char *filename) 
-{
-	char buff[1024];
-	//(void)filename;
-
-	strcpy(buff, "HTTP/1.0 200 OK\r\n");
-	send(fd_client, buff, strlen(buff), 0);
-	strcpy(buff, "Server: httpd\r\n");
-	send(fd_client, buff, strlen(buff), 0);
-	sprintf(buff, "Content-Type: text/html\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-	strcpy(buff, "\r\n");
-	send(fd_client, buff, sizeof(buff), 0);
-}
-
-void serve_file(int fd_client, const char *filename)
-{
-	FILE *resource = NULL;
-	int numchars = 1; 
-	char buff[1024];
-
-	buff[0] = 'A';
-	buff[1] = '\0';
-
-	while((numchars > 0) && strcmp("\n", buff))
-	{
-		numchars = get_line(fd_client, buff, sizeof(buff));
-	}
-
-	resource = fopen(filename, "r");
-
-	if(resource != NULL) 
-	{
-		ok_request(fd_client, filename);
-		cat(fd_client, resource);
-	}
-	else 
-	{
-		not_found_request(fd_client);
-	}	
-	fclose(resource);
-}
-
 void write_logfile()
 {
 	FILE *file;
@@ -161,7 +48,7 @@ void write_logfile()
 	struct tm* time_info;
 	time(&timer);
 	time_info = localtime(&timer);
-	strftime(time_buffer,50,"%Y - %M-%D %H:%M:%S", time_info);
+	strftime(time_buffer,50,"%Y - %M-%d %H:%M:%S", time_info);
 	puts(time_buffer);
 	fprintf(file, "%s : " , time_buffer);
 	fprintf(file, "%s : ", ip_addr);
@@ -174,112 +61,6 @@ void write_logfile()
 
 }
 
-void accept_request(int fd_client)
-{
-	char buf[1024];
-	int numchars;
-	char method[255];
-	char url[255];
-	char path[512];
-	size_t a, b;
-	struct stat st;
-	
-	char *query_string = NULL;
-
-	numchars = get_line(fd_client, buf, sizeof(buf));
-	a = 0; b = 0;
-	while (!ISspace(buf[b]) && (a < sizeof(method)-1))
-	{
-		method[a] = buf[b];
-		a++; b++;
-	}
-	method[a] = '\0';
-
-	if(strcasecmp(method, "GET") && strcasecmp(method, "POST"))
-	{
-		unimplemented_request(fd_client);
-		return;
-	}
-	//if(strcasecmp(method, "POST") == 0)
-	a = 0;
-	while(ISspace(buf[b] && b < sizeof(buf)))
-		b++;
-	while(!ISspace(buf[b]) && (a < sizeof(url) - 1) && (b < sizeof(buf)))
-	{
-		url[a] = buf[b];
-		a++; 
-		b++;
-	}
-	url[a] = '\0';
-
-	if(strcasecmp(method, "GET") == 0)
-	{
-		query_string = url;
-		while ((*query_string != '?') && (*query_string != '\0'))
-			query_string++;
-		if(query_string == '?')
-		{
-			*query_string = '\0';
-			query_string++;
-		}
-	}
-	sprintf(path, "htdocs%s", url);
-	if(path[strlen(path) - 1] == '/')
-	{
-		strcat(path, "index.html"); 
-	}
-	if(stat(path, &st) == -1)
-	{
-		while ((numchars > 0 ) && strcasecmp("\n", buf))
-			numchars = get_line(fd_client, buf, sizeof(buf));
-			not_found_request(fd_client);
-	}
-	else
-	{
-		if((st.st_mode & S_IFMT) == S_IFDIR)
-			strcat(path, "/index.html");
-		//if((st.st_mode & S_IXUSR) || (st.st_mode & S_IXGRP) || (st.st_mode & S_IXOTH) ))
-		// cgi = 1;
-	}
-	close(fd_client);
-}
-
-int get_line(int socket, char *buff, int size) 
-{
-	int i = 0; 
-	char c = '\0';
-	int n;
-
-	while((i < size-1) && (c != '\n'))
-	{
-		n = recv(socket, &c, 1, 0);
-		if (n > 0)
-		{
-			if (c == '\r') 
-			{
-				n = recv(socket, &c, 1, MSG_PEEK);
-
-				if((n > 0) && (c == '\n')) 
-				{
-					recv(socket, &c, 1, 0);
-				}
-				else 
-				{
-					c = '\n';
-				}
-			}
-			buff[i] = c;
-			i++;
-		}
-		else 
-		{
-			c = '\n';
-		}
-	}
-	buff[i] = '\0';
-	return(i);
-}
-
 #define BUFFER_SIZE 10000
 
 int main(int argc, char *argv[])
@@ -289,6 +70,11 @@ int main(int argc, char *argv[])
 	int fd_server, fd_client;
 	char buf[BUFFER_SIZE];
 	int on = 1;
+
+	if(argc == 1) 
+	{
+		printf("Disabled warning !!");
+	}
 
 	port_nr = strtol(argv[1], NULL, 10);
 
@@ -338,13 +124,9 @@ int main(int argc, char *argv[])
 			printf("%s\n", buf);
 		}
 
-
 		write(fd_client, webpage, sizeof(webpage) - 1);
-
-		//handle_http_request(fd_client);
 		write_logfile();
-
 	}
-
+	close(fd_server);
 	return 0;
 }
