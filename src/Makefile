@@ -7,6 +7,7 @@ LOADLIBES =
 LDLIBS =
 OBJFLAGS = -c
 SHELL := /bin/bash
+LIBRARIES = -lev2citrusleaf -levent -lssl -lrt -lcrypto -lpthread
 
 SERVER_PORT := 1088
 
