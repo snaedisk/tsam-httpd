@@ -135,7 +135,7 @@ void serve_file(int fd_client, const char *filename)
 
 	while((numchars > 0) && strcmp("\n", buff))
 	{
-		//numchars = get_line(client, buff, sizeof(buff));
+		numchars = get_line(fd_client, buff, sizeof(buff));
 	}
 
 	resource = fopen(filename, "r");
@@ -186,7 +186,7 @@ void accept_request(int fd_client)
 	
 	char *query_string = NULL;
 
-	//numchars = get_line(fd_client, buf, sizeof(buf));
+	numchars = get_line(fd_client, buf, sizeof(buf));
 	a = 0; b = 0;
 	while (!ISspace(buf[b]) && (a < sizeof(method)-1))
 	{
@@ -231,7 +231,7 @@ void accept_request(int fd_client)
 	if(stat(path, &st) == -1)
 	{
 		while ((numchars > 0 ) && strcasecmp("\n", buf))
-			//numchars = get_line(fd_client, buf, sizeof(buf));
+			numchars = get_line(fd_client, buf, sizeof(buf));
 			not_found_request(fd_client);
 	}
 	else
@@ -242,6 +242,42 @@ void accept_request(int fd_client)
 		// cgi = 1;
 	}
 	close(fd_client);
+}
+
+int get_line(int socket, char *buff, int size) 
+{
+	int i = 0; 
+	char c = '\0';
+	int n;
+
+	while((i < size-1) && (c != '\n'))
+	{
+		n = recv(socket, &c, 1, 0);
+		if (n > 0)
+		{
+			if (c == '\r') 
+			{
+				n = recv(socket, &c, 1, MSG_PEEK);
+
+				if((n > 0) && (c == '\n')) 
+				{
+					recv(socket, &c, 1, 0);
+				}
+				else 
+				{
+					c = '\n';
+				}
+			}
+			buff[i] = c;
+			i++;
+		}
+		else 
+		{
+			c = '\n';
+		}
+	}
+	buff[i] = '\0';
+	return(i);
 }
 
 #define BUFFER_SIZE 10000
