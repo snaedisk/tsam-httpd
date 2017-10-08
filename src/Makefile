@@ -7,15 +7,14 @@ LOADLIBES =
 LDLIBS =
 OBJFLAGS = -c
 SHELL := /bin/bash
-LIBRARIES = -lev2citrusleaf -levent -lssl -lrt -lcrypto -lpthread
 
 SERVER_PORT := 1088
 
 .DEFAULT: all
-.PHONY: all post clean
+.PHONY: all 
 
-#all: $(CC) $(CFLAGS)  httpd.c -o httpd
-all: httpd
+all: 
+	$(CC) $(CFLAGS)  httpd.c -o httpd
 
 clean:
 	rm -f *.o
